@@ -8,6 +8,7 @@ import {
   getGeneratedTimetable
 } from '../services/api';
 import { CalendarDays, RefreshCw, Info, DoorClosed, Users, BookOpen, FlaskConical } from 'lucide-react';
+import { useReticleStore } from '@reticlehq/react/store';
 
 const ViewTimetable = () => {
   const [viewType, setViewType] = useState('section'); // 'section' | 'faculty' | 'room'
@@ -108,6 +109,22 @@ const ViewTimetable = () => {
     );
   };
 
+  // Expose timetable state to Reticle so it can read structured data, not just DOM
+  useReticleStore('viewTimetable', {
+    viewType,
+    selectedId,
+    loading,
+    fetchingEntries,
+    entryCount: timetableEntries.length,
+    workingDays,
+    // Full entries array — lets Reticle assert on day spread, section isolation, etc.
+    entries: timetableEntries,
+    // Summary by day for quick day-spread checks
+    entryDays: [...new Set(timetableEntries.map((e) => e.day_of_week))].sort(),
+    // Summary by section_id for isolation checks
+    sectionIds: [...new Set(timetableEntries.map((e) => e.section_id))],
+  });
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12 text-slate-500">
@@ -169,6 +186,7 @@ const ViewTimetable = () => {
           <select
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
+            data-testid="timetable-section-selector"
             className="px-3 py-1.5 text-xs font-semibold border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50"
           >
             {viewType === 'section' &&
@@ -214,7 +232,7 @@ const ViewTimetable = () => {
 
         {/* Timetable Grid Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse min-w-[850px]">
+          <table data-testid="timetable-grid" className="w-full text-left text-xs border-collapse min-w-[850px]">
             <thead>
               <tr className="bg-slate-800 text-white font-semibold uppercase tracking-wider">
                 <th className="py-3 px-3 w-28 border-r border-slate-700">Day / Period</th>

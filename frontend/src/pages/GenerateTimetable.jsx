@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getValidationReport, generateTimetable, clearGeneratedTimetable, exportTimetableCsv } from '../services/api';
 import { Sparkles, CheckCircle2, AlertCircle, Cpu, ArrowRight, ShieldCheck, RefreshCw, CalendarDays, Trash2, TrendingUp, Award, Scale, Download, Check, FileSpreadsheet, ListChecks, HelpCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useReticleStore } from '@reticlehq/react/store';
 
 const GenerateTimetable = ({ stats, refreshStats }) => {
   const [validationReport, setValidationReport] = useState(null);
@@ -99,6 +100,22 @@ const GenerateTimetable = ({ stats, refreshStats }) => {
   const beforeAfter = resultData?.before_vs_after || {};
   const fuzzyExpl = resultData?.fuzzy_explanation || {};
 
+  // Expose generation state to Reticle so it can read structured app state, not just DOM
+  useReticleStore('generateTimetable', {
+    generating,
+    resultStatus: resultData?.status ?? null,
+    generatedCount: resultData?.generated_count ?? null,
+    initialFitness: resultData?.initial_fitness ?? null,
+    optimizedFitness: resultData?.optimized_fitness ?? null,
+    improvementPercent: resultData?.improvement_percent ?? null,
+    generations: resultData?.generations ?? null,
+    diagnostics: resultData?.diagnostics ?? [],
+    message: resultData?.message ?? null,
+    isReady,
+    validationPassed: validationReport?.passed_checks ?? null,
+    validationTotal: validationReport?.total_checks ?? null,
+  });
+
   return (
     <div className="space-y-6">
       {/* Top Header Controls */}
@@ -121,6 +138,7 @@ const GenerateTimetable = ({ stats, refreshStats }) => {
           </button>
           <button
             onClick={handleClear}
+            data-testid="clear-timetable-btn"
             className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-300 flex items-center space-x-1.5"
           >
             <Trash2 className="w-3.5 h-3.5 text-slate-500" />
@@ -129,6 +147,7 @@ const GenerateTimetable = ({ stats, refreshStats }) => {
           <button
             onClick={handleGenerate}
             disabled={generating}
+            data-testid="generate-timetable-btn"
             className="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center space-x-2 disabled:opacity-50"
           >
             {generating ? (
@@ -143,7 +162,7 @@ const GenerateTimetable = ({ stats, refreshStats }) => {
 
       {/* Hero Performance Summary Banner */}
       {resultData && resultData.status === 'success' && (
-        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 rounded-2xl p-6 text-white border border-indigo-800 shadow-xl space-y-6">
+        <div data-testid="generation-success-banner" className="bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 rounded-2xl p-6 text-white border border-indigo-800 shadow-xl space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-800/80 pb-4">
             <div className="flex items-center space-x-2.5">
               <Award className="w-6 h-6 text-amber-400 shrink-0" />
@@ -201,6 +220,21 @@ const GenerateTimetable = ({ stats, refreshStats }) => {
               <span className="text-[10px] font-bold text-blue-300 uppercase tracking-wider block">Assigned Slots</span>
               <span className="text-xl font-extrabold text-blue-300 mt-1 block">{resultData.generated_count}</span>
               <span className="text-[10px] text-emerald-400 font-semibold mt-0.5 block">0 Hard Conflicts</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error / Diagnostic Alert Banner */}
+      {resultData && resultData.status === 'failed' && (
+        <div data-testid="generation-error-banner" className="p-5 bg-rose-50 border border-rose-200 text-rose-900 rounded-2xl shadow-sm space-y-3">
+          <div className="flex items-start space-x-3">
+            <AlertCircle className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
+            <div>
+              <h4 className="text-sm font-bold">{resultData.message}</h4>
+              <p className="text-xs text-rose-700 mt-1">
+                Please resolve the data constraints listed in the audit report before running generation.
+              </p>
             </div>
           </div>
         </div>
