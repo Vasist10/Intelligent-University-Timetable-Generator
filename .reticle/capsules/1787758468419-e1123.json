@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "id": "1787758468419-e1123",
+  "createdAt": 1787758468420,
+  "origin": "failed-assert",
+  "expected": "declared consequence",
+  "observed": "no element matched {\"role\":\"dialog\"}",
+  "steps": [
+    {
+      "tool": "reticle_act",
+      "anchor": {
+        "kind": "testid",
+        "value": "e1123",
+        "source": {
+          "file": "src/pages/SubjectsCourses.jsx",
+          "line": 211,
+          "column": 9
+        }
+      },
+      "action": "click"
+    }
+  ]
+}
